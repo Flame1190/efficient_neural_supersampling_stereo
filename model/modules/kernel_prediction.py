@@ -56,6 +56,8 @@ if __name__ == "__main__":
     net = KernelPrediction(7, 1024, 3)
     x = torch.randn(1, 2)
     kernel = net(x)
+    print(x.shape)
+    print(kernel.shape)
     print(kernel)
     kernel = kernel.repeat(3, 3, 1, 1)
     

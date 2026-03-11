@@ -2,11 +2,57 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from base import BaseModel
-from model.modules import DepthToSpace, SpaceToDepth
+from model.modules import DepthToSpace, SpaceToDepth, Blending, KernelPrediction, Reconstruction
 from utils import warp, retrieve_elements_from_indices
 
 class ENSS(BaseModel):
-    pass
+    def __init__(self, scale_factor: int, depth_block_size: int = 3, num_conv_layers: int = 4) -> None:
+        super().__init__()
+        # Warp module
+        self.warp = Warping(scale_factor=scale_factor, depth_block_size=depth_block_size)
+
+        self.reconstruction = Reconstruction(in_channels=3 + 1 + 2 + 1 + 3, out_channels=64, f=64, m=4, enc_kernel_predictor=KernelPrediction(7, 1024, 3), dec_kernel_predictor=KernelPrediction(7, 1024, 3))
+        # Then concat (done in forward pass)
+
+        # First conv and ReLU layer
+        self.predicted_kernel = KernelPrediction(7, 1024, 3)
+        self.relu1 = nn.ReLU()
+
+        
+        self.sigmoid = nn.Sigmoid()
+        self.relu2 = nn.ReLU()
+        # Blending module
+        self.blending = Blending()
+        self.depth_to_space1 = DepthToSpace(block_size=scale_factor)
+        self.depth_to_space2 = DepthToSpace(block_size=scale_factor)
+
+    def forward(self, 
+                color: torch.Tensor,
+                depth: torch.Tensor,
+                jitter: torch.Tensor,
+                prev_features: torch.Tensor,
+                prev_color: torch.Tensor) -> torch.Tensor:
+        B, _, H, W = color.shape
+        assert B == 1 # kernel prediction may break if B > 1
+        
+        #predicted_kernel = self.predicted_kernel(jitter[:, :, 0, 0])
+        #predicted_kernel = predicted_kernel.repeat(3, 3, 1, 1)
+        
+        #x = torch.concat([color, depth, jitter, prev_features, prev_color], dim=1)
+        #x = F.conv2d(x, predicted_kernel, padding=1)
+        #x = self.relu1(x)
+       # x = self.conv_layers(x)
+
+       
+        mask, color_prior_blending, features = self.reconstruction(color, depth, jitter, prev_features, prev_color)
+
+        blending = self.blending(previous_frame=prev_color, current_frame=color_prior_blending, blending_mask=mask)
+        new_color = self.depth_to_space2(blending)
+        features = self.depth_to_space1(features)
+
+
+        return features, new_color
+
 
 class Warping(BaseModel):
     def __init__(self, scale_factor: int, depth_block_size: int = 3) -> None:
@@ -55,3 +101,5 @@ class Warping(BaseModel):
         prev_color = self.space_to_depth(prev_color)
 
         return prev_features, prev_color
+
+
