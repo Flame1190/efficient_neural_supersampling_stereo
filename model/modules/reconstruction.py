@@ -61,9 +61,9 @@ class Reconstruction(BaseModel):
         
         # jitter tensor is B, 2, H, W but its the same for each pixel
         enc_kernel = self.enc_kernel_predictor(jitter[:, :, 0, 0])
-        # todo: fix this error where channels expected is 3 but get 10 (related to concat, and then first conv)
-        enc_kernel = enc_kernel.repeat(out_channels, 3, 1, 1)
+        enc_kernel = enc_kernel.repeat(10, 10, 1, 1)
         dec_kernel = self.dec_kernel_predictor(jitter[:, :, 0, 0])
+        dec_kernel = dec_kernel.repeat(64, 64, 1, 1)
 
         x = torch.cat([color, depth, jitter, prev_features, prev_color], dim=1)
 

@@ -45,7 +45,7 @@ class ENSS(BaseModel):
 
        
         mask, color_prior_blending, features = self.reconstruction(color, depth, jitter, prev_features, prev_color)
-
+        # todo: match up dimensions correctly. This might need some clarification on how the model actually works, as this isn't very clear from the paper
         blending = self.blending(previous_frame=prev_color, current_frame=color_prior_blending, blending_mask=mask)
         new_color = self.depth_to_space2(blending)
         features = self.depth_to_space1(features)
