@@ -63,7 +63,7 @@ class Reconstruction(BaseModel):
         enc_kernel = self.enc_kernel_predictor(jitter[:, :, 0, 0])
         enc_kernel = enc_kernel.repeat(10, 10, 1, 1)
         dec_kernel = self.dec_kernel_predictor(jitter[:, :, 0, 0])
-        dec_kernel = dec_kernel.repeat(64, 64, 1, 1)
+        dec_kernel = dec_kernel.repeat(10, 64, 1, 1)
 
         x = torch.cat([color, depth, jitter, prev_features, prev_color], dim=1)
 
