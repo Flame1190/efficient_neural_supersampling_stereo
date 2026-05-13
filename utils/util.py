@@ -37,7 +37,7 @@ def warp(image: torch.Tensor, motion: torch.Tensor) -> torch.Tensor:
 
     return F.grid_sample(image, vgrid.permute(0, 2, 3, 1).to(image.dtype), mode="bilinear", align_corners=True)
 
-def retrieve_elements_from_indices(tensor: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
+def retrieve_elements_from_indices(tensor: torch.Tensor, indices: torch.Tensor, upscale_factor: int = 1) -> torch.Tensor:
     _, iC, _, _ = indices.shape
     assert iC == 1
     B, C, H, W = tensor.shape
@@ -51,6 +51,9 @@ def retrieve_elements_from_indices(tensor: torch.Tensor, indices: torch.Tensor) 
     # if not duplicating indices for each channel
     # we would have to loop over each channel and gather
     tensor = tensor.gather(dim=2, index=indices).view(B, C, H, W)
+    # Upsample the tensor by the upscale factor. This should be done with no intepolation, as the grid itself is alerady accurately mapped.
+    if upscale_factor > 1:
+        tensor = F.interpolate(tensor, scale_factor=upscale_factor, mode="nearest")
     return tensor
 
 

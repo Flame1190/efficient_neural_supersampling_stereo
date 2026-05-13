@@ -11,7 +11,7 @@ class ENSS(BaseModel):
         # Warp module
         self.warp = Warping(scale_factor=scale_factor, depth_block_size=depth_block_size)
 
-        self.reconstruction = Reconstruction(in_channels=3 + 1 + 2 + 1 + 3, out_channels=64, f=64, m=4, enc_kernel_predictor=KernelPrediction(7, 1024, 3), dec_kernel_predictor=KernelPrediction(7, 1024, 3))
+        self.reconstruction = Reconstruction(in_channels=3 + 1 + 2 + 1 + 3, out_channels=64, f=64, m=num_conv_layers, enc_kernel_predictor=KernelPrediction(7, 1024, 3), dec_kernel_predictor=KernelPrediction(7, 1024, 3))
         # Then concat (done in forward pass)
 
         # First conv and ReLU layer
@@ -29,7 +29,9 @@ class ENSS(BaseModel):
     def forward(self, 
                 color: torch.Tensor,
                 depth: torch.Tensor,
+                motion: torch.Tensor,
                 jitter: torch.Tensor,
+                prev_jitter: torch.Tensor,
                 prev_features: torch.Tensor,
                 prev_color: torch.Tensor) -> torch.Tensor:
         B, _, H, W = color.shape
@@ -42,11 +44,11 @@ class ENSS(BaseModel):
         #x = F.conv2d(x, predicted_kernel, padding=1)
         #x = self.relu1(x)
        # x = self.conv_layers(x)
-
+        prev_features_warped, prev_color_warped = self.warp(depth, jitter, prev_jitter, motion, prev_features, prev_color)
        
-        mask, color_prior_blending, features = self.reconstruction(color, depth, jitter, prev_features, prev_color)
+        mask, color_prior_blending, features = self.reconstruction(color, depth, jitter, prev_features_warped, prev_color_warped)
         # todo: sigmoid output is the blending mask. I'm on the right track, but there may be an issue with how blending is handled
-        blending = self.blending(previous_frame=prev_color, current_frame=color, blending_mask=mask)
+        blending = self.blending(previous_frame=prev_color_warped, current_frame=color_prior_blending, blending_mask=mask)
         new_color = self.depth_to_space2(blending)
         features = self.depth_to_space1(features)
 
@@ -58,6 +60,7 @@ class Warping(BaseModel):
     def __init__(self, scale_factor: int, depth_block_size: int = 3) -> None:
         assert depth_block_size % 2 == 1 # They used 8x8 but I can't use even kernels yet
         super().__init__()
+        self.scale_factor = scale_factor
         self.space_to_depth = SpaceToDepth(block_size=scale_factor)
         self.max_pool = nn.MaxPool2d(kernel_size=depth_block_size, stride=1, padding=depth_block_size // 2, return_indices=True)
 
@@ -90,7 +93,8 @@ class Warping(BaseModel):
         # Depth informed dilation
         # Get indices of closest pixels and use those motion vectors
         _, indices = self.max_pool(depth)
-        motion = retrieve_elements_from_indices(motion, indices)
+        # I think this should upscale the motion vectors to the target resolution
+        motion = retrieve_elements_from_indices(motion, indices, upscale_factor=self.scale_factor)
 
         # Warp previous features and color
         prev_features = warp(prev_features, motion)

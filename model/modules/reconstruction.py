@@ -56,21 +56,35 @@ class Reconstruction(BaseModel):
                 prev_features: torch.Tensor,
                 prev_color: torch.Tensor
                 ):
-        B, *_ = color.shape
+        B, C, H, W = color.shape
         assert B == 1 # kernel prediction may break if B > 1
         
         # jitter tensor is B, 2, H, W but its the same for each pixel
         enc_kernel = self.enc_kernel_predictor(jitter[:, :, 0, 0])
         enc_kernel = enc_kernel.repeat(10, 10, 1, 1)
         dec_kernel = self.dec_kernel_predictor(jitter[:, :, 0, 0])
-        dec_kernel = dec_kernel.repeat(10, 64, 1, 1)
+        dec_kernel_mask = dec_kernel.repeat(64, 64, 1, 1)
+        dec_kernel_color = dec_kernel.repeat(3, 64, 1, 1)
 
-        x = torch.cat([color, depth, jitter, prev_features, prev_color], dim=1)
+        dec_kernel = dec_kernel.repeat(64, 64, 1, 1)
 
+        #dec_kernel_mask = 
+        # x = torch.cat([color, depth, jitter, prev_features, prev_color], dim=1)
+        # Removed prev_color as it is not used in the reconstruction network. Needed only for blending it seems
+
+
+        # Not sure why jitter needs to be encoded as well, but this is according to the diagram.
+        jitter = jitter.expand(-1, -1, H, W)
+        x = torch.cat([color, depth, jitter, prev_features], dim=1)
+        print(x.shape)
         x = F.conv2d(x, enc_kernel, padding=1)
         x = self.net(x)
         
         features = F.conv2d(x, dec_kernel, padding=1)
+
+        mask = F.conv2d(features, dec_kernel_mask, padding=1)
+        color_prior_blending = F.conv2d(features, dec_kernel_color, padding=1)
+        
         mask = self.sigmoid(features)
         color_prior_blending = self.relu(features)
         return mask, color_prior_blending, features
