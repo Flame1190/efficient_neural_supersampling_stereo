@@ -11,7 +11,7 @@ class ENSS(BaseModel):
         # Warp module
         self.warp = Warping(scale_factor=scale_factor, depth_block_size=depth_block_size)
 
-        self.reconstruction = Reconstruction(in_channels=3 + 1 + 2 + 1 + 3, out_channels=64, f=64, m=num_conv_layers, enc_kernel_predictor=KernelPrediction(7, 1024, 3), dec_kernel_predictor=KernelPrediction(7, 1024, 3))
+        self.reconstruction = Reconstruction(scale_factor=scale_factor,in_channels=3 + 1 + 2 + 1 + 3, out_channels=64, f=64, m=num_conv_layers, enc_kernel_predictor=KernelPrediction(7, 1024, 3), dec_kernel_predictor=KernelPrediction(7, 1024, 3))
         # Then concat (done in forward pass)
 
         # First conv and ReLU layer

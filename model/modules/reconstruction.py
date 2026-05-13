@@ -10,6 +10,7 @@ class Reconstruction(BaseModel):
     """
 
     def __init__(self, 
+                 scale_factor : int,
                  in_channels: int,
                  out_channels: int,
                  f: int, 
@@ -18,7 +19,7 @@ class Reconstruction(BaseModel):
                  dec_kernel_predictor: KernelPrediction):
         super().__init__()
         # self.jitter_prediction
-
+        self.scale_factor = scale_factor
         self.enc_kernel_predictor = enc_kernel_predictor
         self.dec_kernel_predictor = dec_kernel_predictor
 
@@ -63,8 +64,8 @@ class Reconstruction(BaseModel):
         enc_kernel = self.enc_kernel_predictor(jitter[:, :, 0, 0])
         enc_kernel = enc_kernel.repeat(10, 10, 1, 1)
         dec_kernel = self.dec_kernel_predictor(jitter[:, :, 0, 0])
-        dec_kernel_mask = dec_kernel.repeat(64, 64, 1, 1)
-        dec_kernel_color = dec_kernel.repeat(3, 64, 1, 1)
+        dec_kernel_mask = dec_kernel.repeat(3 * (self.scale_factor**2), 64, 1, 1)
+        dec_kernel_color = dec_kernel.repeat(3 * self.scale_factor**2, 64, 1, 1)
 
         dec_kernel = dec_kernel.repeat(64, 64, 1, 1)
 
@@ -82,8 +83,8 @@ class Reconstruction(BaseModel):
         
         features = F.conv2d(x, dec_kernel, padding=1)
 
-        mask = F.conv2d(features, dec_kernel_mask, padding=1)
-        color_prior_blending = F.conv2d(features, dec_kernel_color, padding=1)
+        mask = F.conv2d(x, dec_kernel_mask, padding=1)
+        color_prior_blending = F.conv2d(x, dec_kernel_color, padding=1)
         
         mask = self.sigmoid(features)
         color_prior_blending = self.relu(features)
