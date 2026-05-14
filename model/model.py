@@ -23,8 +23,8 @@ class ENSS(BaseModel):
         self.relu2 = nn.ReLU()
         # Blending module
         self.blending = Blending()
-        self.depth_to_space1 = DepthToSpace(block_size=8)
-        self.depth_to_space2 = DepthToSpace(block_size=8)
+        self.depth_to_space1 = DepthToSpace(block_size=scale_factor)
+        self.depth_to_space2 = DepthToSpace(block_size=scale_factor)
 
     def forward(self, 
                 color: torch.Tensor,

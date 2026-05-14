@@ -67,7 +67,7 @@ class Reconstruction(BaseModel):
         dec_kernel_mask = dec_kernel.repeat(3 * (self.scale_factor**2), 64, 1, 1)
         dec_kernel_color = dec_kernel.repeat(3 * self.scale_factor**2, 64, 1, 1)
 
-        dec_kernel = dec_kernel.repeat(64, 64, 1, 1)
+        dec_kernel = dec_kernel.repeat(self.scale_factor**2, 64, 1, 1)
 
         #dec_kernel_mask = 
         # x = torch.cat([color, depth, jitter, prev_features, prev_color], dim=1)
