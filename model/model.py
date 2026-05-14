@@ -49,9 +49,11 @@ class ENSS(BaseModel):
         mask, color_prior_blending, features = self.reconstruction(color, depth, jitter, prev_features_warped, prev_color_warped)
         # todo: sigmoid output is the blending mask. I'm on the right track, but there may be an issue with how blending is handled
         blending = self.blending(previous_frame=prev_color_warped, current_frame=color_prior_blending, blending_mask=mask)
-        new_color = self.depth_to_space2(blending)
-        features = self.depth_to_space1(features)
 
+        new_color = self.depth_to_space2(blending)
+        print("Blending done")
+        features = self.depth_to_space1(features)
+        print("Features done")
 
         return features, new_color
 

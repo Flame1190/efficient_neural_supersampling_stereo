@@ -85,9 +85,9 @@ class Reconstruction(BaseModel):
 
         mask = F.conv2d(x, dec_kernel_mask, padding=1)
         color_prior_blending = F.conv2d(x, dec_kernel_color, padding=1)
-        
-        mask = self.sigmoid(features)
-        color_prior_blending = self.relu(features)
+
+        mask = self.sigmoid(mask)
+        color_prior_blending = self.relu(color_prior_blending)
         return mask, color_prior_blending, features
         
 
