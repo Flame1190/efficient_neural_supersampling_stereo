@@ -7,9 +7,9 @@
 - [ ] 5th level 2d halton
 
 # Model
-- [ ] Jitter compensation
+- [-] Jitter compensation
 - [ ] Depth-informed dilation
 - [x] Depth-to-space and space-to-depth
 - [ ] Jitter-conditioned convolutions
-- [ ] Core network 
+- [x] Core network 
 - [x] Blending module
