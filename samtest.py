@@ -29,10 +29,10 @@ if __name__ == "__main__":
         lr_color = load_image_as_tensor(args.lr_color_png)
     else:
         lr_color = torch.rand(1, 3, 256, 256)
-    depth = torch.rand(1, 1, 256, 256)
+    depth = torch.rand(1, 1, 256, 256)  # torch.rand(1, 1, 256, 256)
     jitter = torch.rand(1, 2, 1, 1)
     prev_jitter = torch.rand(1, 2, 1, 1)
-    motion = torch.rand(1, 2, 256, 256)
+    motion = torch.zeros(1, 2, 256, 256)# torch.rand(1, 2, 256, 256)
     prev_features = torch.rand(1, 1, 512, 512)
     if args.prev_color_png:
         prev_color = load_image_as_tensor(args.prev_color_png)
